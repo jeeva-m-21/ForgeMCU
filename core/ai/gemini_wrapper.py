@@ -35,7 +35,7 @@ class MockGemini(LLMClient):
 class GeminiClient(LLMClient):
     def __init__(self, api_key: Optional[str] = None, model_name: Optional[str] = None):
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
-        self.model_name = model_name or os.environ.get("GEMINI_MODEL") or "gemini-flash-latest"
+        self.model_name = model_name or os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
         if not self.api_key:
             raise RuntimeError("No GEMINI_API_KEY configured for GeminiClient")
         # lazily import the official GenAI client

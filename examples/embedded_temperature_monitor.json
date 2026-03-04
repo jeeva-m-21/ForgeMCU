@@ -1,0 +1,96 @@
+{
+  "project_name": "temperature-monitor",
+  "description": "Industrial temperature monitoring system with dual I2C sensors, OLED display, UART data logging, and GPIO alarm output. Designed for continuous factory-floor monitoring with configurable thresholds and low-power sleep between readings.",
+  "mcu": "STM32F401",
+  "modules": [
+    {
+      "name": "temp_sensor",
+      "type": "sensor",
+      "description": "DS18B20 1-Wire temperature sensor driver with CRC validation and multi-drop bus support",
+      "parameters": {
+        "interface": "OneWire",
+        "pin": "PA0",
+        "sampling_rate_hz": 1,
+        "resolution_bits": 12
+      }
+    },
+    {
+      "name": "env_sensor",
+      "type": "sensor",
+      "description": "BME280 I2C environmental sensor measuring temperature, humidity, and barometric pressure",
+      "parameters": {
+        "interface": "I2C",
+        "address": "0x76",
+        "sampling_rate_hz": 2,
+        "oversampling": "x4"
+      }
+    },
+    {
+      "name": "oled_display",
+      "type": "display",
+      "description": "SSD1306 128x64 OLED display via I2C showing real-time sensor readings and system status",
+      "parameters": {
+        "interface": "I2C",
+        "address": "0x3C",
+        "resolution": "128x64",
+        "refresh_rate_hz": 5
+      }
+    },
+    {
+      "name": "uart_logger",
+      "type": "communication",
+      "description": "UART serial output at 115200 baud for timestamped CSV data logging to host PC or SD adapter",
+      "parameters": {
+        "interface": "UART",
+        "baud_rate": 115200,
+        "tx_pin": "PA2",
+        "rx_pin": "PA3",
+        "format": "CSV"
+      }
+    },
+    {
+      "name": "alarm_output",
+      "type": "actuator",
+      "description": "GPIO-driven piezo buzzer and red LED indicator for over-temperature alarm condition",
+      "parameters": {
+        "interface": "GPIO",
+        "buzzer_pin": "PB0",
+        "led_pin": "PB1",
+        "alarm_pattern": "500ms_on_off"
+      }
+    },
+    {
+      "name": "watchdog",
+      "type": "safety",
+      "description": "Independent watchdog timer (IWDG) ensuring system recovery from firmware faults",
+      "parameters": {
+        "interface": "Watchdog",
+        "timeout_ms": 2000,
+        "prescaler": 64
+      }
+    }
+  ],
+  "requirements": [
+    "Read DS18B20 temperature sensor every 1 second with CRC validation",
+    "Read BME280 environmental data (temp, humidity, pressure) every 2 seconds",
+    "Display all sensor values on OLED with 5Hz refresh rate",
+    "Trigger audible alarm and LED when any temperature exceeds 85°C",
+    "Log all readings as timestamped CSV to UART at 115200 baud",
+    "Implement configurable alarm thresholds stored in Flash/EEPROM",
+    "Support low-power STOP mode between sensor readings for battery operation",
+    "I2C bus error recovery with automatic re-initialization",
+    "Watchdog timer with 2-second timeout for fault recovery",
+    "System startup self-test: verify all I2C devices respond"
+  ],
+  "constraints": {
+    "flash_kb": 256,
+    "ram_kb": 64,
+    "clock_mhz": 84,
+    "supply_voltage": "3.3V",
+    "operating_temp": "-20°C to +85°C",
+    "max_current_ma": 50,
+    "i2c_bus_speed_khz": 400
+  },
+  "safety_critical": false,
+  "optimization_goal": "power"
+}

@@ -4,5 +4,17 @@ pydantic>=1.10
 networkx>=3.0
 requests>=2.31
 python-dotenv>=1.0.0
+
+# LangChain / Agentic AI stack
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-google-genai>=2.0.0
+langgraph>=0.2.0
+langchain-community>=0.3.0
+
+# FastAPI backend
+fastapi>=0.100.0
+uvicorn>=0.23.0
+
 # Optional: Google GenAI SDK (required only if you enable USE_REAL_GEMINI and set GEMINI_API_KEY)
 google-genai>=0.0.0

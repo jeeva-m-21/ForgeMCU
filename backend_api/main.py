@@ -1,5 +1,6 @@
 """FastAPI backend for CyberForge-26 UI
 Provides RESTful API endpoints for firmware generation and orchestration.
+Powered by LangChain + LangGraph agentic AI stack.
 """
 from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,7 +19,9 @@ from enum import Enum
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.orchestration.orchestrator import Orchestrator
+from core.orchestration.langgraph_orchestrator import LangGraphOrchestrator
 from core.ai.gemini_wrapper import create_llm_client
+from core.ai.langchain_llm import create_langchain_client
 from core.ai.prompt import PromptLoader
 from core.mcp.mcp import MCP
 from core.rag.rag import RAG
@@ -30,14 +33,14 @@ logger = logging.getLogger("cyberforge.api")
 # Initialize FastAPI app
 app = FastAPI(
     title="CyberForge-26 API",
-    description="AI-assisted firmware generation platform",
-    version="1.0.0"
+    description="AI-assisted firmware generation platform — powered by LangChain & LangGraph",
+    version="2.0.0"
 )
 
 # Add CORS middleware to allow React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:4173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -121,6 +124,7 @@ class HealthResponse(BaseModel):
     status: str
     version: str
     timestamp: str
+    engine: str = "langgraph"
 
 
 # ============ In-Memory State ============
@@ -136,8 +140,9 @@ async def health_check() -> HealthResponse:
     """Health check endpoint"""
     return HealthResponse(
         status="healthy",
-        version="1.0.0",
-        timestamp=datetime.utcnow().isoformat()
+        version="2.0.0",
+        timestamp=datetime.utcnow().isoformat(),
+        engine="langgraph",
     )
 
 
@@ -561,34 +566,152 @@ async def get_run_logs(run_id: str) -> Dict[str, Any]:
     }
 
 
+# ============ Agent & Pipeline Endpoints ============
+
+@app.get("/api/agents", tags=["agents"])
+async def list_agents() -> List[Dict[str, Any]]:
+    """Return metadata about all available agents and their capabilities."""
+    return [
+        {
+            "id": "architecture_agent",
+            "name": "Architecture Agent",
+            "description": "Designs system architecture, module decomposition, and communication patterns",
+            "capabilities": ["System decomposition", "Module planning", "Interface design", "Dependency graph"],
+            "mcp_permissions": ["read:requirements", "write:architecture", "run:agent"],
+            "status": "ready",
+            "provider": "langchain",
+        },
+        {
+            "id": "code_agent",
+            "name": "Code Generation Agent",
+            "description": "Generates production-quality C/C++ firmware code per module or as unified file",
+            "capabilities": ["C/C++ generation", "Arduino .ino", "Header/source split", "MCU-aware templates"],
+            "mcp_permissions": ["run:agent", "write:module_code", "read:architecture"],
+            "status": "ready",
+            "provider": "langchain",
+        },
+        {
+            "id": "test_agent",
+            "name": "Test Agent",
+            "description": "Generates unit tests and test cases for generated firmware modules",
+            "capabilities": ["Unit test generation", "Test case design", "Coverage analysis", "Edge case detection"],
+            "mcp_permissions": ["run:agent", "read:module_code", "write:tests"],
+            "status": "ready",
+            "provider": "langchain",
+        },
+        {
+            "id": "quality_agent",
+            "name": "Quality Agent",
+            "description": "Performs static analysis, MISRA compliance checks, and quality scoring",
+            "capabilities": ["Static analysis", "MISRA compliance", "Complexity metrics", "Quality scoring"],
+            "mcp_permissions": ["run:agent", "read:module_code", "read:tests", "write:reports"],
+            "status": "ready",
+            "provider": "langchain",
+        },
+        {
+            "id": "build_agent",
+            "name": "Build Agent",
+            "description": "Compiles firmware, runs tests, generates build logs and deployment artifacts",
+            "capabilities": ["GCC/Clang compilation", "Test execution", "Build log generation", "Binary output"],
+            "mcp_permissions": ["run:agent", "read:module_code", "read:tests", "write:artifacts", "write:build_log"],
+            "status": "ready",
+            "provider": "langchain",
+        },
+    ]
+
+
+@app.get("/api/pipeline/graph", tags=["pipeline"])
+async def get_pipeline_graph() -> Dict[str, Any]:
+    """Return the LangGraph pipeline visualization data."""
+    orch = LangGraphOrchestrator(input_payload={}, output_dir="output")
+    return orch.get_graph_visualization()
+
+
+@app.get("/api/pipeline/status", tags=["pipeline"])
+async def get_pipeline_status() -> Dict[str, Any]:
+    """Return current pipeline engine info and statistics."""
+    total = len(runs)
+    completed = sum(1 for r in runs.values() if r.status == GenerationStatus.COMPLETED)
+    failed = sum(1 for r in runs.values() if r.status == GenerationStatus.FAILED)
+    running = sum(1 for r in runs.values() if r.status == GenerationStatus.RUNNING)
+    return {
+        "engine": "langgraph",
+        "version": "2.0.0",
+        "agents": 5,
+        "pipeline_steps": ["init", "architecture_agent", "code_agents", "test_agent", "quality_agent", "build_agent"],
+        "features": ["conditional_routing", "state_management", "error_recovery", "mcp_enforcement", "rag_context"],
+        "stats": {
+            "total_runs": total,
+            "completed": completed,
+            "failed": failed,
+            "running": running,
+        },
+    }
+
+
+@app.get("/api/stack", tags=["system"])
+async def get_tech_stack() -> Dict[str, Any]:
+    """Return the current technology stack details."""
+    langchain_version = "unknown"
+    langgraph_version = "unknown"
+    try:
+        import langchain_core
+        langchain_version = getattr(langchain_core, "__version__", "installed")
+    except ImportError:
+        langchain_version = "not installed"
+    try:
+        import langgraph
+        langgraph_version = getattr(langgraph, "__version__", "installed")
+    except ImportError:
+        langgraph_version = "not installed"
+
+    return {
+        "backend": "FastAPI",
+        "orchestration": "LangGraph",
+        "llm_framework": "LangChain",
+        "llm_provider": "Google Gemini",
+        "security": "MCP (Model Context Protocol)",
+        "knowledge": "RAG (Retrieval-Augmented Generation)",
+        "versions": {
+            "langchain_core": langchain_version,
+            "langgraph": langgraph_version,
+        },
+    }
+
+
 # ============ Background Tasks ============
 
 async def _run_orchestration(run_id: str, payload: Dict[str, Any]) -> None:
-    """Run orchestration in background"""
+    """Run orchestration in background using LangGraph pipeline."""
     try:
         # Update status to running
         runs[run_id].status = GenerationStatus.RUNNING
         runs[run_id].progress = 10
-        runs[run_id].message = "Starting orchestration..."
+        runs[run_id].message = "Starting LangGraph orchestration..."
         
-        logger.info(f"Starting orchestration for run {run_id}")
+        logger.info(f"Starting LangGraph orchestration for run {run_id}")
         
         # Set up model provider based on payload
         model_provider = payload.get("model_provider", "mock").lower()
         use_real_gemini = model_provider == "gemini"
         if use_real_gemini:
-            logger.info(f"Using Gemini LLM for run {run_id}")
-            runs[run_id].message = "Initializing with Gemini LLM..."
+            logger.info(f"Using LangChain + Gemini for run {run_id}")
+            runs[run_id].message = "Initializing LangChain with Gemini..."
             runs[run_id].progress = 15
         else:
-            logger.info(f"Using Mock LLM for run {run_id}")
-            runs[run_id].message = "Using Mock LLM..."
+            logger.info(f"Using LangChain Mock for run {run_id}")
+            runs[run_id].message = "Using LangChain Mock LLM..."
         
-        # Create orchestrator and run with use_real_gemini flag
+        # Use LangGraph orchestrator
         runs[run_id].progress = 20
-        runs[run_id].message = "Running architecture analysis..."
+        runs[run_id].message = "Running architecture analysis via LangGraph..."
         
-        orch = Orchestrator(payload, output_dir="output", run_id=run_id, use_real_gemini=use_real_gemini)
+        orch = LangGraphOrchestrator(
+            payload,
+            output_dir="output",
+            run_id=run_id,
+            use_real_gemini=use_real_gemini,
+        )
         result = orch.run()
         
         if result.success:

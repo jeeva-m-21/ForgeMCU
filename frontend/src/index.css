@@ -4,83 +4,180 @@
 
 :root {
   color-scheme: dark;
-  --bg-900: #000000;
-  --bg-800: #0A0A0A;
-  --bg-700: #111111;
-  --bg-600: #18181B;
-  --text-primary: #FFFFFF;
-  --text-secondary: #A1A1AA;
-  --accent: #0070F3;
-  --muted: #A1A1AA;
-  --border: rgba(255,255,255,0.06);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body, #root {
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 body {
-  background-color: var(--bg-900);
-  color: var(--text-primary);
-  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  background-color: #000;
+  color: #ededed;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
+  font-size: 14px;
 }
 
-/* Dark mode overrides */
-.dark body {
-  background-color: #0b0f14;
-  color: #e5e7eb;
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #444; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ─── Selection ─── */
+::selection {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
 }
 
-/* Surface / tokens used across components */
-.surface {
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+/* ─── Mono ─── */
+code, pre, .font-mono {
+  font-family: 'Geist Mono', 'JetBrains Mono', 'Fira Code', monospace;
 }
 
-.text-muted {
-  color: var(--text-secondary);
+/* ─── Inputs ─── */
+input, select, textarea {
+  background-color: #0a0a0a;
+  border: 1px solid #222;
+  color: #ededed;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.border-var {
-  border-color: var(--border);
+input:focus, select:focus, textarea:focus {
+  border-color: #555;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.04);
+  outline: none;
 }
 
-.input-base {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: inherit;
+input::placeholder, textarea::placeholder {
+  color: #555;
 }
 
-/* Panels and responsive adjustments */
-.panel {
-  min-height: 48vh;
+/* ─── Animations ─── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Ensure center column can shrink without overflow issues */
-.flex-1 { min-width: 0 }
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
 
-/* Scrollbar styling for large code panels */
-.surface::-webkit-scrollbar { width: 10px; height: 10px }
-.surface::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.04); border-radius: 8px }
-.surface::-webkit-scrollbar-track { background: transparent }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
-.bg-page { background: var(--bg-900); }
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
 
-input, select, textarea { background-color: transparent; }
+@keyframes shimmer {
+  0%   { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
 
-pre { background-color: #071018; }
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
 
-/* Accent utilities */
-.accent { color: var(--accent) }
-.bg-accent { background-color: var(--accent) }
+@keyframes typewriter {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+@keyframes codeRain {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  10%  { opacity: 0.6; }
+  90%  { opacity: 0.6; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-fade-in      { animation: fadeIn 0.35s ease-out; }
+.animate-fade-scale   { animation: fadeInScale 0.3s ease-out; }
+.animate-slide-up     { animation: slideUp 0.4s ease-out; }
+.animate-slide-left   { animation: slideInLeft 0.25s ease-out; }
+.animate-pulse-soft   { animation: pulse-soft 2s ease-in-out infinite; }
+.animate-blink        { animation: blink 1s step-end infinite; }
+
+.skeleton {
+  background: linear-gradient(90deg, #111 25%, #1a1a1a 50%, #111 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+/* ─── Gradient text ─── */
+.gradient-text {
+  background: linear-gradient(to right, #fff, #888);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Gradient border ─── */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #333, #111);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ─── Prose overrides ─── */
+.prose { color: #ccc; max-width: none; }
+.prose h1, .prose h2, .prose h3 { color: #fff; }
+.prose a { color: #fff; }
+.prose code { color: #ccc; background: #171717; }
+.prose pre { background: #0a0a0a; border: 1px solid #222; }
+.prose pre code { background: transparent; color: #ccc; }
+.prose blockquote { border-left: 3px solid #333; color: #888; }
+.prose strong { color: #fff; }
+.prose table { border-collapse: collapse; width: 100%; }
+.prose th, .prose td { border: 1px solid #222; padding: 8px 12px; }
+.prose th { background: #111; }
+
+/* ─── Code generation effect ─── */
+.code-line-appear {
+  animation: fadeIn 0.15s ease-out both;
+}
+
+.typing-cursor::after {
+  content: '▊';
+  animation: blink 1s step-end infinite;
+  color: #fff;
+  font-weight: 100;
+}
